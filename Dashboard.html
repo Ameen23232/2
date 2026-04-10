@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>لوحة التحكم - Azure & Co.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* ======================== الوضع الفاتح (Light Mode) ======================== */
+    :root {
+      --bg-primary: #f0f4f8;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --text-primary: #1a2a3a;
+      --text-secondary: #2c3e50;
+      --text-muted: #5a6e7c;
+      --border-light: #dce5ec;
+      --border-hover: #b8ccda;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --accent: #2c5f8a;
+      --accent-hover: #1a3a5c;
+      --accent-light: #e3eef6;
+      --sidebar-bg: linear-gradient(180deg, #0f1e2c 0%, #1a3a5c 100%);
+      --sidebar-text: white;
+      --toast-bg: #1a3a5c;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --success: #10b981;
+    }
+
+    /* ======================== الوضع الليلي (Dark Mode) ======================== */
+    body.dark {
+      --bg-primary: #0a1620;
+      --bg-secondary: #0f1e2c;
+      --bg-card: #142836;
+      --text-primary: #e8f0f8;
+      --text-secondary: #b8d0e0;
+      --text-muted: #8aa8c0;
+      --border-light: #1a3a4c;
+      --border-hover: #2a5a74;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+      --accent: #4a8ab5;
+      --accent-hover: #5c9ec9;
+      --accent-light: #1a3040;
+      --sidebar-bg: linear-gradient(180deg, #06121c 0%, #0f1e2c 100%);
+      --sidebar-text: #e8f0f8;
+      --toast-bg: #2c5f8a;
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+
+    /* ======================== زر تبديل الواط (فقط زر واحد في الأعلى) ======================== */
+    .theme-toggle-btn {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1000;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 60px;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text-primary);
+      transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--accent);
+      transform: scale(1.02);
+    }
+
+    /* ======================== زر القائمة للهواتف (يظهر فقط في الشاشات الصغيرة) ======================== */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      padding: 0.7rem 1rem;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    /* ======================== تنسيق الـ Dashboard ======================== */
+    .dashboard {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar - تظهر دائماً في الشاشات الكبيرة */
+    .sidebar {
+      width: 260px;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 2rem 1.2rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar h2 {
+      font-size: 1.3rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-item {
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* المحتوى الرئيسي */
+    .main-content {
+      flex: 1;
+      padding: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    /* البطاقات */
+    .card {
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-light);
+      transition: all 0.3s ease;
+    }
+
+    .card h2 {
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-right: 4px solid var(--accent);
+      padding-right: 1rem;
+    }
+
+    /* النماذج */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--border-light);
+      border-radius: 16px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(44,95,138,0.1);
+    }
+
+    /* مجموعة الأزرار */
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      align-items: center;
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.3rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+
+    .btn-secondary {
+      background: var(--border-light);
+      color: var(--accent);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-hover);
+    }
+
+    .btn-success {
+      background: var(--success);
+    }
+
+    /* الجداول */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 0.8rem;
+      text-align: right;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    th {
+      font-weight: 700;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      background: var(--accent-light);
+      color: var(--accent);
+      padding: 0.2rem 0.5rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+    }
+
+    /* الإحصائيات */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border-radius: 20px;
+      padding: 1.2rem;
+      text-align: center;
+      border: 1px solid var(--border-light);
+    }
+
+    .stat-card .number {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    /* الإشعارات */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: var(--toast-bg);
+      color: white;
+      padding: 0.7rem 1.3rem;
+      border-radius: 48px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+      box-shadow: var(--shadow-md);
+      font-size: 0.85rem;
+    }
+
+    .toast.show { opacity: 1; }
+
+    /* ======================== Responsive - فقط للهواتف ======================== */
+    @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        transform: translateX(100%);
+        width: 260px;
+        height: 100vh;
+        z-index: 200;
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      /* خلفية مظللة عند فتح القائمة */
+      .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 199;
+        display: none;
+      }
+
+      .sidebar-overlay.active {
+        display: block;
+      }
+
+      .main-content {
+        padding: 1rem;
+        padding-top: 4rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      .button-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .button-group button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 0.8rem;
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        padding: 0.6rem;
+      }
+
+      td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      td:last-child {
+        border-bottom: none;
+      }
+
+      td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: var(--accent);
+        margin-left: 1rem;
+        font-size: 0.8rem;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .sidebar {
+        transform: translateX(0) !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- زر تبديل الوضع (زر واحد فقط في الأعلى) -->
+<button class="theme-toggle-btn" id="themeToggle">
+  <i class="fas fa-moon"></i> <span id="themeText">الوضع الليلي</span>
+</button>
+
+<!-- زر القائمة للهواتف (يظهر فقط في الشاشات الصغيرة) -->
+<button class="mobile-menu-btn" id="mobileMenuBtn">
+  <i class="fas fa-bars"></i>
+</button>
+
+<!-- خلفية مظللة للهواتف -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="dashboard">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <h2><i class="fas fa-crown"></i> Azure Admin</h2>
+    <nav>
+      <div class="nav-item active" data-tab="dashboard"><i class="fas fa-chart-line"></i> الرئيسية</div>
+      <div class="nav-item" data-tab="products"><i class="fas fa-box"></i> المنتجات</div>
+      <div class="nav-item" data-tab="categories"><i class="fas fa-tags"></i> الأقسام</div>
+      <div class="nav-item" data-tab="settings"><i class="fas fa-cog"></i> الإعدادات</div>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Dashboard Tab -->
+    <div id="dashboardTab" class="tab-content">
+      <div class="stats-grid">
+        <div class="stat-card"><h3>المنتجات</h3><div class="number" id="totalProducts">0</div></div>
+        <div class="stat-card"><h3>الأقسام</h3><div class="number" id="totalCategories">0</div></div>
+        <div class="stat-card"><h3>الصور</h3><div class="number" id="totalImages">0</div></div>
+      </div>
+      <div class="card">
+        <h2><i class="fas fa-info-circle"></i> مرحباً في لوحة التحكم</h2>
+        <p>يمكنك إدارة المنتجات والأقسام والصور من هنا. جميع التغييرات تظهر فوراً في المتجر.</p>
+      </div>
+    </div>
+
+    <!-- Products Tab -->
+    <div id="productsTab" class="tab-content" style="display:none">
+      <div class="card">
+        <h2><i class="fas fa-plus-circle"></i> إضافة منتج جديد</h2>
+        <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName" placeholder="مثال: جاكيت جلد فاخر"></div>
+        <div class="form-group"><label>القسم</label><select id="prodCategory"></select></div>
+        <div class="form-group"><label>ترتيب العرض</label><input type="number" id="prodOrder" placeholder="10"></div>
+        <div class="form-group"><label>صورة المنتج</label><input type="text" id="prodImage" placeholder="🧥 أو رابط صورة"></div>
+        <button id="addProductBtn"><i class="fas fa-save"></i> إضافة منتج</button>
+      </div>
+      <div class="card">
+        <h2><i class="fas fa-list"></i> جميع المنتجات</h2>
+        <div style="overflow-x:auto"></table><thead><tr><th>الصورة</th><th>المنتج</th><th>القسم</th><th>الترتيب</th><th></th></tr></thead><tbody id="productsList"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- Categories Tab -->
+    <div id="categoriesTab" class="tab-content" style="display:none">
+      <div class="card">
+        <h2><i class="fas fa-plus-circle"></i> إضافة قسم جديد</h2>
+        <div class="form-group"><label>اسم القسم</label><input type="text" id="catName" placeholder="مثال: شتوي, صيفي"></div>
+        <button id="addCategoryBtn">إضافة قسم</button>
+      </div>
+      <div class="card">
+        <h2><i class="fas fa-tags"></i> الأقسام الحالية</h2>
+        <div id="categoriesList"></div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="settingsTab" class="tab-content" style="display:none">
+      <div class="card">
+        <h2><i class="fas fa-palette"></i> إعدادات الموقع</h2>
+        <div class="form-group">
+          <label>اسم الموقع</label>
+          <input type="text" id="siteName" placeholder="Azure & CO.">
+        </div>
+        <div class="button-group">
+          <button id="saveSettingsBtn" class="btn-success"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-database"></i> إدارة البيانات</h2>
+        <div class="button-group">
+          <button id="exportDataBtn" class="btn-secondary"><i class="fas fa-download"></i> تصدير البيانات</button>
+          <button id="clearProductsBtn" class="btn-danger"><i class="fas fa-trash-alt"></i> حذف جميع المنتجات</button>
+        </div>
+        <p style="margin-top: 0.8rem; font-size: 0.75rem; color: var(--text-muted);">
+          <i class="fas fa-exclamation-triangle"></i> تنبيه: حذف جميع المنتجات لا يمكن التراجع عنه
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">✨ تم</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+  import { getDatabase, ref, set, push, onValue, remove } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js';
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyDDVYttBm00kFOHTz8Ba5FQSU2I70qIky8",
+    authDomain: "yassen-web.firebaseapp.com",
+    projectId: "yassen-web",
+    storageBucket: "yassen-web.firebasestorage.app",
+    messagingSenderId: "314231686384",
+    appId: "1:314231686384:web:d3fe1b3495ad3deca56e35",
+    measurementId: "G-VZ9YTBEDP1"
+  };
+  
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  
+  let products = [];
+  let categories = [];
+  
+  // ======================== الوضع الليلي ========================
+  let darkMode = localStorage.getItem('darkMode') === 'true';
+  
+  function applyTheme() {
+    if (darkMode) {
+      document.body.classList.add('dark');
+      document.getElementById('themeText').innerHTML = 'الوضع النهاري 🌞';
+      document.querySelector('#themeToggle i').className = 'fas fa-sun';
+    } else {
+      document.body.classList.remove('dark');
+      document.getElementById('themeText').innerHTML = 'الوضع الليلي 🌙';
+      document.querySelector('#themeToggle i').className = 'fas fa-moon';
+    }
+  }
+  
+  function toggleTheme() {
+    darkMode = !darkMode;
+    localStorage.setItem('darkMode', darkMode);
+    applyTheme();
+  }
+  
+  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+  applyTheme();
+  
+  // ======================== القائمة للهواتف ========================
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  
+  function openMobileMenu() {
+    sidebar.classList.add('open');
+    sidebarOverlay.classList.add('active');
+  }
+  
+  function closeMobileMenu() {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('active');
+  }
+  
+  mobileMenuBtn.addEventListener('click', openMobileMenu);
+  sidebarOverlay.addEventListener('click', closeMobileMenu);
+  
+  // في الشاشات الكبيرة، القائمة تظهر دائماً
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      closeMobileMenu();
+    }
+  });
+  
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        closeMobileMenu();
+      }
+    });
+  });
+  
+  // ======================== تحميل البيانات ========================
+  function loadData() {
+    const productsRef = ref(db, 'products');
+    onValue(productsRef, (snapshot) => {
+      const data = snapshot.val();
+      products = data ? Object.entries(data).map(([id, val]) => ({ ...val, firebaseId: id })) : [];
+      updateUI();
+      updateStats();
+    });
+    
+    const categoriesRef = ref(db, 'categories');
+    onValue(categoriesRef, (snapshot) => {
+      const data = snapshot.val();
+      categories = data ? Object.entries(data).map(([id, val]) => ({ ...val, firebaseId: id })) : [];
+      if (categories.length === 0) {
+        categories = [
+          { id: "cat1", name: "تي شيرت" }, { id: "cat2", name: "قمصان" },
+          { id: "cat3", name: "بناطيل" }, { id: "cat4", name: "جواكت" }
+        ];
+      }
+      updateCategorySelect();
+      displayCategories();
+      updateUI();
+      updateStats();
+    });
+    
+    const settingsRef = ref(db, 'settings');
+    onValue(settingsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.siteName) document.getElementById('siteName').value = data.siteName;
+    });
+  }
+  
+  function updateUI() {
+    const tbody = document.getElementById('productsList');
+    tbody.innerHTML = products.map(p => `
+      <tr>
+        <td data-label="الصورة"><span style="font-size:1.5rem">${p.image || '👚'}</span></td>
+        <td data-label="المنتج"><strong>${p.name}</strong></td>
+        <td data-label="القسم"><span class="badge">${categories.find(c => c.id === p.categoryId)?.name || '?'}</span></td>
+        <td data-label="الترتيب">${p.displayOrder || 'auto'}</td>
+        <td data-label="إجراء"><button class="delete-product" data-id="${p.firebaseId}" style="background:#dc2626; padding:0.2rem 0.6rem; font-size:0.75rem; border:none; border-radius:40px; color:white; cursor:pointer"><i class="fas fa-trash"></i> حذف</button></td>
+      </tr>
+    `).join('');
+    
+    document.querySelectorAll('.delete-product').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+          await remove(ref(db, `products/${id}`));
+          showToast('تم حذف المنتج');
+        }
+      });
+    });
+  }
+  
+  function updateCategorySelect() {
+    const select = document.getElementById('prodCategory');
+    select.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  }
+  
+  function displayCategories() {
+    const container = document.getElementById('categoriesList');
+    container.innerHTML = categories.map(c => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem; border-bottom:1px solid var(--border-light)">
+        <span><i class="fas fa-tag"></i> ${c.name}</span>
+        <button class="delete-category" data-id="${c.firebaseId}" style="background:#dc2626; padding:0.2rem 0.6rem; font-size:0.75rem; border:none; border-radius:40px; color:white; cursor:pointer"><i class="fas fa-trash"></i> حذف</button>
+      </div>
+    `).join('');
+    
+    document.querySelectorAll('.delete-category').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        if (products.some(p => p.categoryId === categories.find(c => c.firebaseId === id)?.id)) {
+          showToast('لا يمكن حذف القسم لأنه يحتوي على منتجات');
+          return;
+        }
+        if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
+          await remove(ref(db, `categories/${id}`));
+          showToast('تم حذف القسم');
+        }
+      });
+    });
+  }
+  
+  function updateStats() {
+    document.getElementById('totalProducts').innerText = products.length;
+    document.getElementById('totalCategories').innerText = categories.length;
+    document.getElementById('totalImages').innerText = products.filter(p => p.image && p.image !== '👚').length;
+  }
+  
+  async function addProduct() {
+    const name = document.getElementById('prodName').value.trim();
+    const categoryId = document.getElementById('prodCategory').value;
+    const order = parseInt(document.getElementById('prodOrder').value) || 999;
+    const image = document.getElementById('prodImage').value.trim() || '👚';
+    if (!name) { showToast('أدخل اسم المنتج'); return; }
+    
+    const newProduct = { name, categoryId, displayOrder: order, image, createdAt: Date.now() };
+    await push(ref(db, 'products'), newProduct);
+    
+    document.getElementById('prodName').value = '';
+    document.getElementById('prodOrder').value = '';
+    document.getElementById('prodImage').value = '';
+    showToast('✅ تم إضافة المنتج');
+  }
+  
+  async function addCategory() {
+    const name = document.getElementById('catName').value.trim();
+    if (!name) { showToast('أدخل اسم القسم'); return; }
+    if (categories.some(c => c.name === name)) { showToast('القسم موجود مسبقاً'); return; }
+    
+    const newCategory = { id: 'cat_' + Date.now(), name };
+    await push(ref(db, 'categories'), newCategory);
+    
+    document.getElementById('catName').value = '';
+    showToast('✅ تم إضافة القسم');
+  }
+  
+  async function saveSettings() {
+    const siteName = document.getElementById('siteName').value;
+    await set(ref(db, 'settings'), { siteName, updatedAt: Date.now() });
+    showToast('✅ تم حفظ الإعدادات');
+  }
+  
+  async function clearAllProducts() {
+    if (confirm('⚠️ هل أنت متأكد من حذف جميع المنتجات؟ لا يمكن التراجع!')) {
+      for (const p of products) {
+        await remove(ref(db, `products/${p.firebaseId}`));
+      }
+      showToast('✅ تم حذف جميع المنتجات');
+    }
+  }
+  
+  function exportData() {
+    const data = { products, categories, exportDate: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'azure_backup.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ تم تصدير البيانات');
+  }
+  
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+  
+  // التنقل بين التبويبات
+  const tabs = ['dashboard', 'products', 'categories', 'settings'];
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const tab = item.getAttribute('data-tab');
+      tabs.forEach(t => { document.getElementById(t + 'Tab').style.display = 'none'; });
+      document.getElementById(tab + 'Tab').style.display = 'block';
+      document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+  
+  // ربط الأزرار
+  document.getElementById('addProductBtn').addEventListener('click', addProduct);
+  document.getElementById('addCategoryBtn').addEventListener('click', addCategory);
+  document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+  document.getElementById('exportDataBtn').addEventListener('click', exportData);
+  document.getElementById('clearProductsBtn').addEventListener('click', clearAllProducts);
+  
+  loadData();
+  showToast('✅ لوحة التحكم جاهزة');
+</script>
+</body>
+</html>
